@@ -8,7 +8,7 @@ game.StarterGui:SetCore("SendNotification", {
 	})
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 Window = Fluent:CreateWindow({
-    Title = "si li côn tiền đình",
+    Title = "si li côn",
     SubTitle = "PREMIUM",
     TabWidth = 155,
     Size = UDim2.fromOffset(500, 350),
