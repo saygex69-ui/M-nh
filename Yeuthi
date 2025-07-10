@@ -1,0 +1,131 @@
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Mạnh hay Yếu ";
+    Text = "Côn mạnh hay yếu?";
+    Icon = "rbxassetid://5009915795";
+    Duration = 1e5;
+    Button1 = "Mạnh";
+    Button2 = "Yếu";
+})
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+Window = Fluent:CreateWindow({
+    Title = "Côn Hub",
+    SubTitle = "PREMIUM",
+    TabWidth = 155,
+    Size = UDim2.fromOffset(500, 350),
+    Acrylic = true, 
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl 
+})
+
+-- === ✅ Thêm Tab Main ===
+local MainTab = Window:AddTab({ Title = "Main", Icon = "⚙️" })
+MainTab:AddLabel("Các chức năng chính:")
+
+MainTab:AddButton({
+    Title = "Tăng tốc độ",
+    Description = "Chạy nhanh như gió",
+    Callback = function()
+        local humanoid = game.Players.LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = 100
+        end
+    end
+})
+
+MainTab:AddButton({
+    Title = "Nhảy cao",
+    Description = "Nhảy như silicon",
+    Callback = function()
+        local humanoid = game.Players.LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+        if humanoid then
+            humanoid.JumpPower = 150
+        end
+    end
+})
+
+MainTab:AddButton({
+    Title = "Reset tốc độ & nhảy",
+    Description = "Đưa về mặc định",
+    Callback = function()
+        local humanoid = game.Players.LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = 16
+            humanoid.JumpPower = 50
+        end
+    end
+})
+
+-- === ✅ Thêm Tab Info ===
+local InfoTab = Window:AddTab({ Title = "Info", Icon = "ℹ️" })
+InfoTab:AddParagraph({
+    Title = "Thông Tin Người Dùng",
+    Content = "Tên: " .. game.Players.LocalPlayer.Name ..
+              "\nUserID: " .. game.Players.LocalPlayer.UserId ..
+              "\nPing: " .. math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()) .. " ms"
+})
+
+-- === Nút Toggle UI Gốc Giữ Nguyên ===
+local MasteryHubBtn = Instance.new("ScreenGui")
+local dutdit = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+local ImageLabel = Instance.new("ImageLabel")
+local TextButton = Instance.new("TextButton")
+
+MasteryHubBtn.Name = "Mastery Hub Btn"
+MasteryHubBtn.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+MasteryHubBtn.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+dutdit.Name = "dut dit"
+dutdit.Parent = MasteryHubBtn
+dutdit.AnchorPoint = Vector2.new(0.1, 0.1)
+dutdit.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+dutdit.Position = UDim2.new(0, 20, 0.1, -6)
+dutdit.Size = UDim2.new(0, 50, 0, 50)
+
+UICorner.CornerRadius = UDim.new(1, 0)
+UICorner.Parent = dutdit
+
+ImageLabel.Parent = dutdit
+ImageLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+ImageLabel.BackgroundTransparency = 1.0
+ImageLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+ImageLabel.Size = UDim2.new(0, 40, 0, 40)
+ImageLabel.Image = "rbxassetid://5009915795"
+
+TextButton.Parent = dutdit
+TextButton.BackgroundTransparency = 1.0
+TextButton.Size = UDim2.new(1, 0, 1, 0)
+TextButton.Font = Enum.Font.SourceSans
+TextButton.Text = ""
+TextButton.TextColor3 = Color3.fromRGB(27, 42, 53)
+
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local zoomedIn = false
+local originalSize = UDim2.new(0, 40, 0, 40)
+local zoomedSize = UDim2.new(0, 30, 0, 30)
+local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+local faded = false
+local fadeInTween = TweenService:Create(dutdit, tweenInfo, {BackgroundTransparency = 0.25})
+local fadeOutTween = TweenService:Create(dutdit, tweenInfo, {BackgroundTransparency = 0})
+
+TextButton.MouseButton1Down:Connect(function()
+    if zoomedIn then
+        TweenService:Create(ImageLabel, tweenInfo, {Size = originalSize}):Play()
+    else
+        TweenService:Create(ImageLabel, tweenInfo, {Size = zoomedSize}):Play()
+    end
+    zoomedIn = not zoomedIn
+
+    if faded then
+        fadeOutTween:Play()
+    else
+        fadeInTween:Play()
+    end
+    faded = not faded
+
+    VirtualInputManager:SendKeyEvent(true, "LeftControl", false, game)
+end)
