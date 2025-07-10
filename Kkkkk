@@ -1,0 +1,221 @@
+
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Yes Or No";
+    Text = "U want reset Config?";
+    Icon = "rbxassetid://92278047249087";
+    Duration = 1e5;
+    Button1 = "Yes";
+    Button2 = "No";
+})
+
+-- === Fluent UI ===
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local Window = Fluent:CreateWindow({
+    Title = "JJ",
+    SubTitle = "by No",
+    TabWidth = 155,
+    Size = UDim2.fromOffset(500, 350),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+
+-- === Tabs ===
+local InfoTab = Window:AddTab({ Title = "Info", Icon = "ℹ️" })
+InfoTab:AddParagraph({
+    Title = "Thông Tin",
+    Content = "UID: " .. LocalPlayer.UserId .. "\nTên: " .. LocalPlayer.Name
+})
+
+local MainTab = Window:AddTab({ Title = "Main", Icon = "⚙️" })
+
+-- === Chức năng gốc: Fly / Speed / Jump ===
+local RunService = game:GetService("RunService")
+local flying, bv, bg = false, nil, nil
+
+local function StartFly()
+    local root = Character:WaitForChild("HumanoidRootPart")
+    bv = Instance.new("BodyVelocity")
+    bg = Instance.new("BodyGyro")
+    bv.Velocity = Vector3.new(0, 0, 0)
+    bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bv.Parent = root
+
+    bg.CFrame = root.CFrame
+    bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    bg.P = 1e4
+    bg.Parent = root
+
+    RunService:BindToRenderStep("Fly", Enum.RenderPriority.Character.Value, function()
+        local camRot = workspace.CurrentCamera.CFrame - workspace.CurrentCamera.CFrame.Position
+        bv.Velocity = camRot.LookVector * 100
+        bg.CFrame = camRot
+    end)
+end
+
+local function StopFly()
+    RunService:UnbindFromRenderStep("Fly")
+    if bv then bv:Destroy() end
+    if bg then bg:Destroy() end
+end
+
+MainTab:AddToggle("Fly", false, function(state)
+    flying = state
+    if flying then StartFly() else StopFly() end
+end)
+
+MainTab:AddToggle("Chạy Nhanh", false, function(state)
+    if Humanoid then
+        Humanoid.WalkSpeed = state and 100 or 16
+    end
+end)
+
+MainTab:AddToggle("Nhảy Cao", false, function(state)
+    if Humanoid then
+        Humanoid.JumpPower = state and 150 or 50
+    end
+end)
+
+-- === ✅ ESP Player ===
+local espConnections = {}
+local function createESP(plr)
+    if plr == LocalPlayer then return end
+    local function applyESP(char)
+        if char and not char:FindFirstChild("ESP_Highlight") then
+            local hl = Instance.new("Highlight")
+            hl.Name = "ESP_Highlight"
+            hl.FillColor = Color3.fromRGB(0, 255, 0)
+            hl.OutlineColor = Color3.fromRGB(0, 255, 0)
+            hl.FillTransparency = 0.5
+            hl.Adornee = char
+            hl.Parent = char
+        end
+    end
+    if plr.Character then applyESP(plr.Character) end
+    table.insert(espConnections, plr.CharacterAdded:Connect(applyESP))
+end
+
+local function removeESP(plr)
+    if plr.Character and plr.Character:FindFirstChild("ESP_Highlight") then
+        plr.Character:FindFirstChild("ESP_Highlight"):Destroy()
+    end
+end
+
+MainTab:AddToggle("ESP Players", false, function(enabled)
+    if enabled then
+        for _, p in ipairs(Players:GetPlayers()) do createESP(p) end
+        table.insert(espConnections, Players.PlayerAdded:Connect(createESP))
+    else
+        for _, p in ipairs(Players:GetPlayers()) do removeESP(p) end
+        for _, con in ipairs(espConnections) do pcall(function() con:Disconnect() end) end
+        espConnections = {}
+    end
+end)
+
+-- === ⏱️ ESP Base Timer (ví dụ cho object tên “BrainrotBase”) ===
+MainTab:AddToggle("ESP Base Timer", false, function(state)
+    local base = workspace:FindFirstChild("BrainrotBase") 
+    if not base then warn("Không tìm thấy base") return end
+
+    local gui = base:FindFirstChild("TimerESP") or Instance.new("BillboardGui")
+    gui.Name = "TimerESP"
+    gui.Size = UDim2.new(0, 100, 0, 40)
+    gui.StudsOffset = Vector3.new(0, 3, 0)
+    gui.AlwaysOnTop = true
+    gui.Adornee = base
+
+    local text = gui:FindFirstChild("TextLabel") or Instance.new("TextLabel", gui)
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.TextColor3 = Color3.fromRGB(255, 0, 0)
+    text.Font = Enum.Font.GothamBold
+    text.TextScaled = true
+
+    gui.Parent = base
+
+    if state then
+        spawn(function()
+            while gui.Parent and state do
+                local time = base:FindFirstChild("TimeRemaining") p
+                if time and time:IsA("NumberValue") then
+                    text.Text = "⏳ " .. math.floor(time.Value) .. "s"
+                else
+                    text.Text = "⏳ ???"
+                end
+                task.wait(1)
+            end
+        end)
+    else
+        gui:Destroy()
+    end
+end)
+
+-- === ✅ Nút bật/tắt Menu giữ nguyên gốc ===
+local MasteryHubBtn = Instance.new("ScreenGui")
+local dutdit = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+local ImageLabel = Instance.new("ImageLabel")
+local TextButton = Instance.new("TextButton")
+
+MasteryHubBtn.Name = "Mastery Hub Btn"
+MasteryHubBtn.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+MasteryHubBtn.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+dutdit.Name = "dut dit"
+dutdit.Parent = MasteryHubBtn
+dutdit.AnchorPoint = Vector2.new(0.1, 0.1)
+dutdit.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+dutdit.Position = UDim2.new(0, 20, 0.1, -6)
+dutdit.Size = UDim2.new(0, 50, 0, 50)
+
+UICorner.CornerRadius = UDim.new(1, 0)
+UICorner.Parent = dutdit
+
+ImageLabel.Parent = dutdit
+ImageLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+ImageLabel.BackgroundTransparency = 1.0
+ImageLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+ImageLabel.Size = UDim2.new(0, 40, 0, 40)
+ImageLabel.Image = "rbxassetid://92278047249087"
+
+TextButton.Parent = dutdit
+TextButton.BackgroundTransparency = 1.0
+TextButton.Size = UDim2.new(1, 0, 1, 0)
+TextButton.Font = Enum.Font.SourceSans
+TextButton.Text = ""
+TextButton.TextColor3 = Color3.fromRGB(27, 42, 53)
+
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local zoomedIn = false
+local originalSize = UDim2.new(0, 40, 0, 40)
+local zoomedSize = UDim2.new(0, 30, 0, 30)
+local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+local faded = false
+local fadeInTween = TweenService:Create(dutdit, tweenInfo, {BackgroundTransparency = 0.25})
+local fadeOutTween = TweenService:Create(dutdit, tweenInfo, {BackgroundTransparency = 0})
+
+TextButton.MouseButton1Down:Connect(function()
+    if zoomedIn then
+        TweenService:Create(ImageLabel, tweenInfo, {Size = originalSize}):Play()
+    else
+        TweenService:Create(ImageLabel, tweenInfo, {Size = zoomedSize}):Play()
+    end
+    zoomedIn = not zoomedIn
+
+    if faded then
+        fadeOutTween:Play()
+    else
+        fadeInTween:Play()
+    end
+    faded = not faded
+
+    VirtualInputManager:SendKeyEvent(true, "LeftControl", false, game)
+end)
