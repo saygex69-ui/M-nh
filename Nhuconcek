@@ -1,0 +1,182 @@
+--== Thông báo vui vẻ ==--
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Steal a Brainrot Hub";
+    Text = "Silicon Viper Pro Online!";
+    Icon = "rbxassetid://5009915795";
+    Duration = 10;
+    Button1 = "Côn mạnh";
+    Button2 = "Côn yếu";
+})
+
+--== Fluent UI ==--
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local Window = Fluent:CreateWindow({
+    Title = "Côn Hub - Brainrot",
+    SubTitle = "SILICON PREMIUM",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(520, 350),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+local MainTab = Window:AddTab({ Title = "Main", Icon = "⚙️" })
+
+--== ESP Player ==--
+local function CreateESP(player)
+    if player == game.Players.LocalPlayer then return end
+    local highlight = Instance.new("Highlight", player.Character or player.CharacterAdded:Wait())
+    highlight.Name = "ESP"
+    highlight.FillColor = Color3.fromRGB(255, 0, 0)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+end
+
+MainTab:AddToggle("ESP Player", nil, function(state)
+    _G.espEnabled = state
+    if state then
+        for _, plr in ipairs(game.Players:GetPlayers()) do
+            pcall(function()
+                if not (plr.Character and plr.Character:FindFirstChild("ESP")) then
+                    CreateESP(plr)
+                end
+            end)
+        end
+        game.Players.PlayerAdded:Connect(function(plr)
+            plr.CharacterAdded:Connect(function()
+                wait(1)
+                CreateESP(plr)
+            end)
+        end)
+    else
+        for _, plr in ipairs(game.Players:GetPlayers()) do
+            if plr.Character and plr.Character:FindFirstChild("ESP") then
+                plr.Character.ESP:Destroy()
+            end
+        end
+    end
+end)
+
+--== ESP Base Time (hiển thị thời gian base gần hết) ==--
+MainTab:AddToggle("ESP Base Time", nil, function(state)
+    _G.baseTimeESP = state
+    while _G.baseTimeESP do
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Model") and v:FindFirstChild("Timer") and not v:FindFirstChild("EspTime") then
+                local billboard = Instance.new("BillboardGui", v)
+                billboard.Name = "EspTime"
+                billboard.Size = UDim2.new(0,100,0,30)
+                billboard.AlwaysOnTop = true
+                billboard.StudsOffset = Vector3.new(0,4,0)
+
+                local label = Instance.new("TextLabel", billboard)
+                label.Size = UDim2.new(1,0,1,0)
+                label.Text = v.Timer.Text
+                label.TextColor3 = Color3.new(1,1,0)
+                label.BackgroundTransparency = 1
+            end
+        end
+        wait(2)
+    end
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:FindFirstChild("EspTime") then
+            v.EspTime:Destroy()
+        end
+    end
+end)
+
+--== Xóa sương mù ==--
+MainTab:AddButton({
+    Title = "Xóa Sương Mù",
+    Callback = function()
+        local lighting = game:GetService("Lighting")
+        lighting.FogEnd = 100000
+        lighting.FogStart = 0
+        lighting.Brightness = 2
+    end
+})
+
+--== Speed & Jump Hack ==--
+MainTab:AddSlider("Tốc độ chạy", {
+    Min = 16,
+    Max = 150,
+    Default = 16
+}, function(value)
+    local h = game.Players.LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+    if h then h.WalkSpeed = value end
+end)
+
+MainTab:AddSlider("Nhảy cao", {
+    Min = 50,
+    Max = 200,
+    Default = 50
+}, function(value)
+    local h = game.Players.LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+    if h then h.JumpPower = value end
+end)
+
+--== Teleport tới base gần nhất (Timer) ==--
+MainTab:AddButton({
+    Title = "Teleport tới Base gần nhất",
+    Callback = function()
+        local root = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local closest, dist = nil, math.huge
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Model") and v:FindFirstChild("Timer") and v:FindFirstChild("Part") then
+                local d = (root.Position - v.Part.Position).Magnitude
+                if d < dist then
+                    dist = d
+                    closest = v.Part
+                end
+            end
+        end
+        if closest then
+            root.CFrame = closest.CFrame + Vector3.new(0, 5, 0)
+        end
+    end
+})
+
+--== Tab Info ==--
+local InfoTab = Window:AddTab({ Title = "Info", Icon = "ℹ️" })
+InfoTab:AddParagraph({
+    Title = "Thông Tin",
+    Content = "Tên: " .. game.Players.LocalPlayer.Name ..
+              "\nUserID: " .. game.Players.LocalPlayer.UserId ..
+              "\nPing: " .. math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()) .. " ms"
+})
+
+--== Nút bật/tắt menu Fluent UI ==--
+local MasteryHubBtn = Instance.new("ScreenGui", game.Players.LocalPlayer:WaitForChild("PlayerGui"))
+local btnFrame = Instance.new("Frame", MasteryHubBtn)
+local btnIcon = Instance.new("ImageLabel", btnFrame)
+local btnClick = Instance.new("TextButton", btnFrame)
+local uicorner = Instance.new("UICorner", btnFrame)
+
+MasteryHubBtn.Name = "CônBtn"
+btnFrame.Size = UDim2.new(0, 50, 0, 50)
+btnFrame.Position = UDim2.new(0, 20, 0.1, 0)
+btnFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+uicorner.CornerRadius = UDim.new(1, 0)
+
+btnIcon.Size = UDim2.new(0, 40, 0, 40)
+btnIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+btnIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+btnIcon.Image = "rbxassetid://5009915795"
+btnIcon.BackgroundTransparency = 1
+
+btnClick.Size = UDim2.new(1, 0, 1, 0)
+btnClick.BackgroundTransparency = 1
+btnClick.Text = ""
+
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local zoomedIn = false
+btnClick.MouseButton1Click:Connect(function()
+    local targetSize = zoomedIn and UDim2.new(0, 40, 0, 40) or UDim2.new(0, 30, 0, 30)
+    TweenService:Create(btnIcon, TweenInfo.new(0.25), {Size = targetSize}):Play()
+    zoomedIn = not zoomedIn
+
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.LeftControl, false, game)
+end)
