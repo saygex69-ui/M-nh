@@ -1,0 +1,103 @@
+--=== UI + Tween To Base + NoClip All In One ===--
+
+--=== Setup Services ===--
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+--=== UI Setup ===--
+local gui = Instance.new("ScreenGui")
+gui.Name = "TweenUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 200, 0, 100)
+frame.Position = UDim2.new(0, 20, 0.5, -50)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+Instance.new("UICorner", frame)
+
+local toggle = Instance.new("TextButton", frame)
+toggle.Position = UDim2.new(0.1, 0, 0.2, 0)
+toggle.Size = UDim2.new(0.8, 0, 0.6, 0)
+toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggle.TextColor3 = Color3.new(1, 1, 1)
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 14
+toggle.Text = "Tween To Base: Yếu"
+Instance.new("UICorner", toggle)
+
+--=== Tween To Base + NoClip Function ===--
+local function tweenToBase()
+	-- Tự động tìm workspace.Plots
+	local plotsFolder = workspace:FindFirstChild("Plots")
+	if not plotsFolder then
+		warn("Không tìm thấy 'Plots' trong workspace. Đợi game load.")
+		return
+	end
+
+	-- Tìm base gần nhất từ AnimalPodiums
+	local closestBase = nil
+	local shortestDistance = math.huge
+
+	for _, plot in pairs(plotsFolder:GetChildren()) do
+		local podiums = plot:FindFirstChild("AnimalPodiums")
+		if podiums then
+			for _, item in pairs(podiums:GetChildren()) do
+				local base = item:FindFirstChild("Base")
+				if base and base:IsA("BasePart") then
+					local distance = (root.Position - base.Position).Magnitude
+					if distance < shortestDistance then
+						shortestDistance = distance
+						closestBase = base
+					end
+				end
+			end
+		end
+	end
+
+	if not closestBase then
+		warn("Không tìm thấy base hợp lệ trong workspace.")
+		return
+	end
+
+	-- Setup tween
+	local goal = {Position = closestBase.Position}
+	local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	local tween = TweenService:Create(root, tweenInfo, goal)
+
+	-- NoClip trong quá trình tween
+	local noclipConnection = RunService.Stepped:Connect(function()
+		for _, part in ipairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+		end
+	end)
+
+	-- Play tween
+	tween:Play()
+	tween.Completed:Connect(function()
+		if noclipConnection then
+			noclipConnection:Disconnect()
+		end
+	end)
+end
+
+--=== Toggle UI Button Logic ===--
+local isEnabled = false
+
+toggle.MouseButton1Click:Connect(function()
+	isEnabled = not isEnabled
+	toggle.Text = "Tween To Base: " .. (isEnabled and "Mạnh" or "Yếu")
+	toggle.BackgroundColor3 = isEnabled and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(50, 50, 50)
+
+	if isEnabled then
+		tweenToBase()
+	end
+end)
