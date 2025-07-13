@@ -1,0 +1,51 @@
+-- Steal a Brainrot - Tween To My Base
+-- Tìm đúng plot của bạn, Tween + NoClip chỉ 1 click
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local root = character:WaitForChild("HumanoidRootPart")
+
+local function findMyBase()
+    local myName = player.Name
+    local plots = workspace:WaitForChild("Plots")
+    for _, plot in ipairs(plots:GetChildren()) do
+        local owner = plot:FindFirstChild("Owner")
+        if owner and owner:IsA("ObjectValue") and owner.Value and owner.Value.Name == myName then
+            local pods = plot:FindFirstChild("AnimalPodiums")
+            if pods then
+                for _, pod in ipairs(pods:GetChildren()) do
+                    if pod:FindFirstChild("Base") then
+                        return pod.Base
+                    end
+                end
+            end
+        end
+    end
+    warn("Không tìm thấy Base của bạn trong workspace.Plots!")
+    return nil
+end
+
+local function tweenToMyBase()
+    local base = findMyBase()
+    if not base then return end
+
+    local goal = {Position = base.Position}
+    local tween = TweenService:Create(root, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), goal)
+
+    local noclip = RunService.Stepped:Connect(function()
+        for _, part in ipairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end)
+
+    tween:Play()
+    tween.Completed:Connect(function()
+        noclip:Disconnect()
+    end)
+end
+
+tweenToMyBase()
