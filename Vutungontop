@@ -1,0 +1,48 @@
+--=== Workspace Setup ===--
+local BaseTarget = workspace:FindFirstChild("TimeBase") or workspace:FindFirstChild("DropBase")
+
+--=== Tween To Base + NoClip Function ===--
+function tweenToBase()
+	-- Lấy base từ workspace
+	local BaseTarget = nil
+	for _, plot in pairs(workspace.Plots:GetChildren()) do
+		if plot:FindFirstChild("Main") and plot.Main:FindFirstChild("UnlockBase") then
+			BaseTarget = plot.Main.UnlockBase
+			break
+		end
+	end
+
+	if not BaseTarget then
+		warn("Không tìm thấy base trong workspace.")
+		return
+	end
+
+	local player = game.Players.LocalPlayer
+	local char = player.Character or player.CharacterAdded:Wait()
+	local root = char:WaitForChild("HumanoidRootPart")
+
+	local TweenService = game:GetService("TweenService")
+	local RunService = game:GetService("RunService")
+
+	-- Setup tween
+	local goal = {Position = BaseTarget.Position}
+	local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	local tween = TweenService:Create(root, tweenInfo, goal)
+
+	-- NoClip logic
+	local noclipConnection = RunService.Stepped:Connect(function()
+		for _, part in ipairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+		end
+	end)
+
+	-- Start tween
+	tween:Play()
+	tween.Completed:Connect(function()
+		if noclipConnection then
+			noclipConnection:Disconnect()
+		end
+	end)
+end
