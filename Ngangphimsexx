@@ -1,0 +1,176 @@
+--=== Services & Biến ===--
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+--=== Config ===--
+local basePos = Vector3.new(-97.6, 34.5, -141.4)
+local tweenDuration = 3
+local isTweening = false
+local noclipConnection
+
+--=== Gửi thông báo góc màn hình ===--
+local function notify(title, text)
+	pcall(function()
+		StarterGui:SetCore("SendNotification", {
+			Title = title,
+			Text = text,
+			Duration = 3
+		})
+	end)
+end
+
+--=== Bật NoClip (đi xuyên tường) ===--
+local function startNoClip()
+	noclipConnection = RunService.Stepped:Connect(function()
+		for _, part in ipairs(char:GetDescendants()) do
+			if part:IsA("BasePart") and part.CanCollide then
+				part.CanCollide = false
+			end
+		end
+	end)
+end
+
+--=== Tắt NoClip ===--
+local function stopNoClip()
+	if noclipConnection then
+		noclipConnection:Disconnect()
+		noclipConnection = nil
+	end
+end
+
+--=== Tween tới Base và đi xuyên tường ===--
+local function tweenToBase()
+	if isTweening then
+		notify("Đang Tween", "Chờ hoàn tất.")
+		return
+	end
+
+	isTweening = true
+	startNoClip()
+	notify("Di Chuyển", "Tween + Xuyên Tường")
+
+	local info = TweenInfo.new(tweenDuration, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+	local goal = {Position = basePos}
+	local tween = TweenService:Create(root, info, goal)
+	tween:Play()
+
+	tween.Completed:Connect(function()
+		stopNoClip()
+		isTweening = false
+		notify("Hoàn Tất", "Đã đến Base!")
+	end)
+end
+
+--=== GUI Setup ===--
+local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+gui.Name = "SiliconBaseUI"
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 220, 0, 130)
+frame.Position = UDim2.new(0, 20, 0.5, -65)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+title.Text = "Vu Tung On Top"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+
+--=== Workspace Setup ===--
+local BaseTarget = workspace:FindFirstChild("TimeBase") or workspace:FindFirstChild("DropBase")
+
+--=== Tween To Base + NoClip Function ===--
+function tweenToBase()
+	if not BaseTarget then
+		warn("Không tìm thấy base trong workspace.")
+		return
+	end
+
+	local player = game.Players.LocalPlayer
+	local char = player.Character or player.CharacterAdded:Wait()
+	local root = char:WaitForChild("HumanoidRootPart")
+
+	local TweenService = game:GetService("TweenService")
+	local RunService = game:GetService("RunService")
+
+	-- Setup tween
+	local goal = {Position = BaseTarget.Position}
+	local tweenInfo = TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+	local tween = TweenService:Create(root, tweenInfo, goal)
+
+	-- NoClip logic
+	local noclipConnection = RunService.Stepped:Connect(function()
+		for _, part in ipairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+		end
+	end)
+
+	-- Start tween
+	tween:Play()
+	tween.Completed:Connect(function()
+		if noclipConnection then
+			noclipConnection:Disconnect()
+		end
+	end)
+end
+
+--=== Nút Toggle Tween + NoClip ===--
+local toggle = Instance.new("TextButton", frame)
+toggle.Position = UDim2.new(0.1, 0, 0, 40)
+toggle.Size = UDim2.new(0.8, 0, 0, 40)
+toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.Font = Enum.Font.Gotham
+toggle.TextSize = 14
+toggle.Text = "Tween To Base: Yếu"
+
+local isEnabled = false
+
+toggle.MouseButton1Click:Connect(function()
+	isEnabled = not isEnabled
+	toggle.Text = "Tween To Base: " .. (isEnabled and "Mạnh" or "Yếu")
+	toggle.BackgroundColor3 = isEnabled and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(50, 50, 50)
+
+	if isEnabled then
+		tweenToBase()
+	end
+end)
+
+--=== Label hiển thị Workspace ===--
+local workspaceLabel = Instance.new("TextLabel", frame)
+workspaceLabel.Position = UDim2.new(0, 0, 1, -20)
+workspaceLabel.Size = UDim2.new(1, 0, 0, 20)
+workspaceLabel.BackgroundTransparency = 1
+workspaceLabel.Text = "Workspace: " .. Workspace.Name
+workspaceLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+workspaceLabel.Font = Enum.Font.Gotham
+workspaceLabel.TextSize = 13
+workspaceLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+--=== Hiệu ứng viền cầu vồng tự động ===--
+local RunService = game:GetService("RunService")
+local hue = 0
+
+RunService.RenderStepped:Connect(function()
+	hue = (hue + 0.003) % 1
+	local rainbow = Color3.fromHSV(hue, 1, 1)
+	pcall(function()
+		frame.BorderSizePixel = 2
+		frame.BorderColor3 = rainbow
+	end)
+end)
