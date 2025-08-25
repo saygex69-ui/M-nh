@@ -1,0 +1,203 @@
+-- Auto Farm Level (Melee) — Full ranges 1→2750 — paste vào executor
+repeat task.wait() until game:IsLoaded()
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local vu = game:GetService("VirtualUser")
+local TS = game:GetService("TweenService")
+
+-- UI (1 button)
+local screen = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+screen.Name = "BF_AutoFarm_UI"
+local btn = Instance.new("TextButton", screen)
+btn.Size = UDim2.new(0,200,0,48)
+btn.Position = UDim2.new(0.02,0,0.28,0)
+btn.BackgroundColor3 = Color3.fromRGB(30,120,255)
+btn.TextColor3 = Color3.fromRGB(1,1,1)
+btn.Font = Enum.Font.GothamBold
+btn.TextSize = 16
+btn.Text = "Auto Farm: OFF"
+
+local AutoFarm = false
+btn.MouseButton1Click:Connect(function()
+	AutoFarm = not AutoFarm
+	btn.Text = "Auto Farm: " .. (AutoFarm and "ON" or "OFF")
+end)
+
+-- anti-idle
+LocalPlayer.Idled:Connect(function()
+	vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+	wait(1)
+	vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
+
+-- helpers
+local function Char() return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() end
+local function HRP() return Char():WaitForChild("HumanoidRootPart") end
+local function Teleport(cf)
+	if not cf then return end
+	local ok = pcall(function()
+		HRP().CFrame = cf + Vector3.new(0,3,0)
+	end)
+	if not ok then
+		-- try Tween fallback
+		pcall(function()
+			local tw = TS:Create(HRP(), TweenInfo.new(0.25, Enum.EasingStyle.Linear), {CFrame = cf + Vector3.new(0,3,0)})
+			tw:Play(); tw.Completed:Wait()
+		end)
+	end
+end
+local function EquipAnyTool()
+	for _,v in ipairs(LocalPlayer.Backpack:GetChildren()) do
+		if v:IsA("Tool") and v:FindFirstChild("Handle") then
+			pcall(function() Char().Humanoid:EquipTool(v) end); return true
+		end
+	end
+	for _,v in ipairs(Char():GetChildren()) do
+		if v:IsA("Tool") and v:FindFirstChild("Handle") then return true end
+	end
+	return false
+end
+local function ClickAttack()
+	vu:CaptureController()
+	vu:ClickButton1(Vector2.new())
+end
+
+-- QuestData: ranges covering 1 -> 2750 (range -> QuestName, QuestNum, Mob, NPC pos, Mob spawn pos)
+local QuestData = {
+	-- First Sea (1 - 699)
+	{Min=1,Max=9,Quest="BanditQuest1",Num=1,Mob="Bandit",NPC=CFrame.new(1059.37,15.44,1550.42),Spawn=CFrame.new(1045.96,27.00,1560.82)},
+	{Min=10,Max=14,Quest="JungleQuest",Num=1,Mob="Monkey",NPC=CFrame.new(-1598.08,35.55,153.37),Spawn=CFrame.new(-1448.51,67.85,11.46)},
+	{Min=15,Max=29,Quest="JungleQuest",Num=2,Mob="Gorilla",NPC=CFrame.new(-1598.08,35.55,153.37),Spawn=CFrame.new(-1129.88,40.46,-525.42)},
+	{Min=30,Max=39,Quest="BuggyQuest1",Num=1,Mob="Pirate",NPC=CFrame.new(-1141.07,4.10,3831.54),Spawn=CFrame.new(-1103.51,13.75,3896.09)},
+	{Min=40,Max=59,Quest="BuggyQuest1",Num=2,Mob="Brute",NPC=CFrame.new(-1141.07,4.10,3831.54),Spawn=CFrame.new(-1140.08,14.80,4322.92)},
+	{Min=60,Max=74,Quest="DesertQuest",Num=1,Mob="Desert Bandit",NPC=CFrame.new(894.48,5.14,4392.43),Spawn=CFrame.new(924.79,6.44,4481.58)},
+	{Min=75,Max=89,Quest="DesertQuest",Num=2,Mob="Desert Officer",NPC=CFrame.new(894.48,5.14,4392.43),Spawn=CFrame.new(1608.28,8.61,4371.00)},
+	{Min=90,Max=99,Quest="SnowQuest",Num=1,Mob="Snow Bandit",NPC=CFrame.new(1389.74,88.15,-1298.90),Spawn=CFrame.new(1354.34,87.27,-1393.94)},
+	{Min=100,Max=119,Quest="SnowQuest",Num=2,Mob="Snowman",NPC=CFrame.new(1389.74,88.15,-1298.90),Spawn=CFrame.new(1201.64,144.57,-1550.06)},
+	{Min=120,Max=149,Quest="MarineQuest2",Num=1,Mob="Chief Petty Officer",NPC=CFrame.new(-5039.58,27.35,4324.68),Spawn=CFrame.new(-4881.23,22.65,4273.75)},
+	{Min=150,Max=174,Quest="SkyQuest",Num=1,Mob="Sky Bandit",NPC=CFrame.new(-4839.53,716.36,-2619.44),Spawn=CFrame.new(-4953.20,295.74,-2899.22)},
+	{Min=175,Max=189,Quest="SkyQuest",Num=2,Mob="Dark Master",NPC=CFrame.new(-4839.53,716.36,-2619.44),Spawn=CFrame.new(-5259.84,391.39,-2229.03)},
+	{Min=190,Max=209,Quest="PrisonerQuest",Num=1,Mob="Prisoner",NPC=CFrame.new(5308.93,1.65,475.12),Spawn=CFrame.new(5098.97,-0.32,474.23)},
+	{Min=210,Max=249,Quest="PrisonerQuest",Num=2,Mob="Dangerous Prisoner",NPC=CFrame.new(5308.93,1.65,475.12),Spawn=CFrame.new(5654.56,15.63,866.29)},
+	{Min=250,Max=274,Quest="ColosseumQuest",Num=1,Mob="Toga Warrior",NPC=CFrame.new(-1580.04,6.35,-2986.47),Spawn=CFrame.new(-1820.21,51.68,-2740.66)},
+	{Min=275,Max=299,Quest="ColosseumQuest",Num=2,Mob="Gladiator",NPC=CFrame.new(-1580.04,6.35,-2986.47),Spawn=CFrame.new(-1292.83,56.38,-3339.03)},
+	{Min=300,Max=324,Quest="MagmaQuest",Num=1,Mob="Military Soldier",NPC=CFrame.new(-5313.37,10.95,8515.29),Spawn=CFrame.new(-5411.16,11.08,8454.29)},
+	{Min=325,Max=374,Quest="MagmaQuest",Num=2,Mob="Military Spy",NPC=CFrame.new(-5313.37,10.95,8515.29),Spawn=CFrame.new(-5802.86,86.26,8828.85)},
+	{Min=375,Max=399,Quest="FishmanQuest",Num=1,Mob="Fishman Warrior",NPC=CFrame.new(61122.65,18.49,1569.39),Spawn=CFrame.new(60878.30,18.48,1543.75)},
+	{Min=400,Max=449,Quest="FishmanQuest",Num=2,Mob="Fishman Commando",NPC=CFrame.new(61122.65,18.49,1569.39),Spawn=CFrame.new(61922.63,18.48,1493.93)},
+	{Min=450,Max=474,Quest="SkyExp1Quest",Num=1,Mob="God's Guard",NPC=CFrame.new(-4721.88,843.87,-1949.96),Spawn=CFrame.new(-4710.04,845.27,-1927.30)},
+	{Min=475,Max=524,Quest="SkyExp1Quest",Num=2,Mob="Shanda",NPC=CFrame.new(-7859.09,5544.19,-381.47),Spawn=CFrame.new(-7678.48,5566.40,-497.21)},
+	{Min=525,Max=549,Quest="SkyExp2Quest",Num=1,Mob="Royal Squad",NPC=CFrame.new(-7906.81,5634.66,-1411.99),Spawn=CFrame.new(-7624.25,5658.13,-1467.35)},
+	{Min=550,Max=624,Quest="SkyExp2Quest",Num=2,Mob="Royal Soldier",NPC=CFrame.new(-7906.81,5634.66,-1411.99),Spawn=CFrame.new(-7836.75,5645.66,-1790.62)},
+	{Min=625,Max=649,Quest="FountainQuest",Num=1,Mob="Galley Pirate",NPC=CFrame.new(5259.81,37.35,4050.02),Spawn=CFrame.new(5551.02,78.90,3930.41)},
+	{Min=650,Max=699,Quest="FountainQuest",Num=2,Mob="Galley Captain",NPC=CFrame.new(5259.81,37.35,4050.02),Spawn=CFrame.new(5232.00,39.00,4079.00)},
+
+	-- Second Sea (700 - 1499)
+	{Min=700,Max=724,Quest="Area1Quest",Num=1,Mob="Raider",NPC=CFrame.new(-429.54,71.76,1836.18),Spawn=CFrame.new(-728.32,52.77,2345.77)},
+	{Min=725,Max=774,Quest="Area1Quest",Num=2,Mob="Mercenary",NPC=CFrame.new(-429.54,71.76,1836.18),Spawn=CFrame.new(-1004.32,80.15,1424.61)},
+	{Min=775,Max=824,Quest="Area2Quest",Num=1,Mob="Swan Pirate",NPC=CFrame.new(640,73,918),Spawn=CFrame.new(640,73,918)},
+	{Min=825,Max=874,Quest="Area2Quest",Num=2,Mob="Factory Staff",NPC=CFrame.new(640,73,918),Spawn=CFrame.new(640,73,918)},
+	{Min=875,Max=899,Quest="MarineQuest3",Num=1,Mob="Marine Lieutenant",NPC=CFrame.new(-2668,73,-2914),Spawn=CFrame.new(-2668,73,-2914)},
+	{Min=900,Max=949,Quest="MarineQuest3",Num=2,Mob="Marine Captain",NPC=CFrame.new(-2668,73,-2914),Spawn=CFrame.new(-2668,73,-2914)},
+	{Min=950,Max=999,Quest="ZombieQuest",Num=1,Mob="Zombie",NPC=CFrame.new(-5546,126,-717),Spawn=CFrame.new(-5546,126,-717)},
+	{Min=1000,Max=1049,Quest="ZombieQuest",Num=2,Mob="Vampire",NPC=CFrame.new(-5546,126,-717),Spawn=CFrame.new(-5546,126,-717)},
+	{Min=1050,Max=1149,Quest="SnowMountainQuest",Num=1,Mob="Snow Trooper",NPC=CFrame.new(566,402,-5363),Spawn=CFrame.new(566,402,-5363)},
+	{Min=1150,Max=1249,Quest="SnowMountainQuest",Num=2,Mob="Winter Warrior",NPC=CFrame.new(566,402,-5363),Spawn=CFrame.new(566,402,-5363)},
+	{Min=1250,Max=1349,Quest="MagmaIslandQuest",Num=1,Mob="Magma Ninja",NPC=CFrame.new(-5478,80,-5872),Spawn=CFrame.new(-5478,80,-5872)},
+	{Min=1350,Max=1449,Quest="MagmaIslandQuest",Num=2,Mob="Lava Pirate",NPC=CFrame.new(-5478,80,-5872),Spawn=CFrame.new(-5478,80,-5872)},
+	{Min=1450,Max=1549,Quest="ForgottenQuest",Num=1,Mob="Sea Soldier",NPC=CFrame.new(-3052,239,-10549),Spawn=CFrame.new(-3052,239,-10549)},
+	{Min=1550,Max=1649,Quest="ForgottenQuest",Num=2,Mob="Water Fighter",NPC=CFrame.new(-3052,239,-10549),Spawn=CFrame.new(-3052,239,-10549)},
+
+	-- Third Sea (1500 - 2750)
+	{Min=1650,Max=1749,Quest="PortQuest",Num=1,Mob="Pirate",NPC=CFrame.new(-406,73,5587),Spawn=CFrame.new(-406,73,5587)},
+	{Min=1750,Max=1849,Quest="HydraQuest1",Num=1,Mob="Dragon Crew Warrior",NPC=CFrame.new(5229,603,345),Spawn=CFrame.new(5229,603,345)},
+	{Min=1850,Max=1949,Quest="HydraQuest2",Num=2,Mob="Stone",NPC=CFrame.new(2263,28,-6485),Spawn=CFrame.new(2263,28,-6485)},
+	{Min=1950,Max=2049,Quest="GreatTreeQuest",Num=1,Mob="Giant Tree",NPC=CFrame.new(2263,28,-6485),Spawn=CFrame.new(2263,28,-6485)},
+	{Min=2050,Max=2149,Quest="TurtleQuest1",Num=1,Mob="Marine Commodore",NPC=CFrame.new(-11486,332,-8346),Spawn=CFrame.new(-11486,332,-8346)},
+	{Min=2150,Max=2249,Quest="TurtleQuest2",Num=2,Mob="Fishman Raider",NPC=CFrame.new(-12119,332,-8786),Spawn=CFrame.new(-12119,332,-8786)},
+	{Min=2250,Max=2349,Quest="HauntedQuest1",Num=1,Mob="Reborn Skeleton",NPC=CFrame.new(-9512,141,5965),Spawn=CFrame.new(-9512,141,5965)},
+	{Min=2350,Max=2449,Quest="HauntedQuest2",Num=2,Mob="Living Zombie",NPC=CFrame.new(-9512,141,5965),Spawn=CFrame.new(-9512,141,5965)},
+	{Min=2450,Max=2499,Quest="CakeQuest1",Num=1,Mob="Cookie Crafter",NPC=CFrame.new(-2074,71,-12270),Spawn=CFrame.new(-2074,71,-12270)},
+	{Min=2500,Max=2549,Quest="CakeQuest2",Num=2,Mob="Head Baker",NPC=CFrame.new(-2074,71,-12270),Spawn=CFrame.new(-2074,71,-12270)},
+	{Min=2550,Max=2599,Quest="TikiQuest1",Num=1,Mob="Tiki Outlaw",NPC=CFrame.new(-16202,100,1037),Spawn=CFrame.new(-16202,100,1037)},
+	{Min=2600,Max=2699,Quest="TikiQuest3",Num=2,Mob="Skull Slayer",NPC=CFrame.new(-16202,100,1037),Spawn=CFrame.new(-16202,100,1037)},
+	{Min=2700,Max=2750,Quest="TikiQuest3",Num=1,Mob="Ancient Gorilla",NPC=CFrame.new(-16202,100,1037),Spawn=CFrame.new(-16202,100,1037)},
+}
+
+-- pick row by level
+local function GetRowByLevel(level)
+	for _,r in ipairs(QuestData) do
+		if level >= r.Min and level <= r.Max then return r end
+	end
+	return nil
+end
+
+-- main loop
+spawn(function()
+	while task.wait(0.12) do
+		if AutoFarm then
+			pcall(function()
+				local ok, level = pcall(function() return LocalPlayer:WaitForChild("Data").Level.Value end)
+				if not ok or not level then return end
+				local row = GetRowByLevel(level)
+				-- if row exists, ensure quest, then hunt mobs
+				if row then
+					-- check gui quest visible
+					local hasQuest = false
+					local guiMain = LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.PlayerGui:FindFirstChild("Main")
+					if guiMain and guiMain:FindFirstChild("Quest") and guiMain.Quest.Visible then hasQuest = true end
+
+					if not hasQuest then
+						Teleport(row.NPC)
+						task.wait(0.45)
+						pcall(function() RS.Remotes.CommF_:InvokeServer("StartQuest", row.Quest, row.Num) end)
+						task.wait(0.6)
+					else
+						-- hunt mob instances
+						local found=false
+						if workspace:FindFirstChild("Enemies") then
+							for _,mob in ipairs(workspace.Enemies:GetChildren()) do
+								if mob.Name == row.Mob and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+									found=true
+									EquipAnyTool()
+									Teleport(mob.HumanoidRootPart.CFrame * CFrame.new(0,0,2.5))
+									repeat
+										if not AutoFarm then break end
+										ClickAttack()
+										task.wait(0.08)
+									until not mob.Parent or mob.Humanoid.Health <= 0 or not AutoFarm
+									task.wait(0.12)
+								end
+							end
+						end
+						if not found and row.Spawn then
+							Teleport(row.Spawn)
+							task.wait(0.6)
+						end
+					end
+				else
+					-- fallback: attack nearest enemy within 120 studs
+					local nearest, nd = nil, 9999
+					for _,m in ipairs(workspace:GetDescendants()) do
+						if m.Name == "HumanoidRootPart" and m.Parent and m.Parent:FindFirstChild("Humanoid") then
+							local hum = m.Parent:FindFirstChild("Humanoid")
+							if hum and hum.Health > 0 then
+								local mag = (m.Position - HRP().Position).Magnitude
+								if mag < nd and mag < 120 then nd = mag; nearest = m.Parent end
+							end
+						end
+					end
+					if nearest then
+						EquipAnyTool()
+						Teleport(nearest.HumanoidRootPart.CFrame * CFrame.new(0,0,2.5))
+						repeat
+							ClickAttack()
+							task.wait(0.08)
+						until not nearest.Parent or not nearest:FindFirstChild("Humanoid") or nearest.Humanoid.Health <= 0 or not AutoFarm
+					end
+				end
+			end)
+		end
+	end
+end)
