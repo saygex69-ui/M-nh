@@ -1,0 +1,327 @@
+-- Auto Farm Level (Melee) — Full CheckQuest 1→2750
+repeat task.wait() until game:IsLoaded()
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local TS = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+-- UI
+local screen = Instance.new("ScreenGui")
+screen.Name = "BF_AutoFarm_UI"
+screen.ResetOnSpawn = false
+screen.Parent = LocalPlayer:WaitForChild("PlayerGui")
+local frame = Instance.new("Frame", screen)
+frame.Size = UDim2.new(0,220,0,60)
+frame.Position = UDim2.new(0.02,0,0.25,0)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,25)
+frame.Active = true; frame.Draggable = true
+local btn = Instance.new("TextButton", frame)
+btn.Size = UDim2.new(1, -12, 1, -12)
+btn.Position = UDim2.new(0,6,0,6)
+btn.Text = "Auto Farm: OFF"
+btn.Font = Enum.Font.GothamBold
+btn.TextSize = 16
+btn.BackgroundColor3 = Color3.fromRGB(30,120,255)
+btn.TextColor3 = Color3.fromRGB(255,255,255)
+
+local AutoFarm = false
+btn.MouseButton1Click:Connect(function()
+    AutoFarm = not AutoFarm
+    btn.Text = "Auto Farm: " .. (AutoFarm and "Manh" or "Yeu")
+end)
+
+-- Helpers
+local function Char() return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() end
+local function HRP() return Char():WaitForChild("HumanoidRootPart") end
+local function TweenPlayer(cf, time)
+    time = time or 0.25
+    local ok = pcall(function()
+        local tw = TS:Create(HRP(), TweenInfo.new(time, Enum.EasingStyle.Linear), {CFrame = cf})
+        tw:Play(); tw.Completed:Wait()
+    end)
+    if not ok then HRP().CFrame = cf end
+end
+local vu = game:GetService("VirtualUser")
+LocalPlayer.Idled:Connect(function() vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); wait(1); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end)
+local function EquipMelee()
+    for _,v in ipairs(LocalPlayer.Backpack:GetChildren()) do
+        if v:IsA("Tool") and v:FindFirstChild("Handle") and v.ToolTip == "Melee" then pcall(function() Char().Humanoid:EquipTool(v) end); return end
+    end
+end
+local function Attack() vu:CaptureController(); vu:ClickButton1(Vector2.new()) end
+
+-- World detection
+local World1, World2, World3 = false, false, false
+if game.PlaceId == 2753915549 then World1 = true
+elseif game.PlaceId == 4442272183 then World2 = true
+elseif game.PlaceId == 7449423635 then World3 = true end
+
+-- Full CheckQuest covering 1 -> 2750 (range-based)
+local Mon, LevelQuest, NameQuest, CFrameQuest, CFrameMon
+local function CheckQuest()
+    local MyLevel = LocalPlayer:WaitForChild("Data").Level.Value
+    -- World1 (First Sea)
+    if World1 then
+        if MyLevel >= 1 and MyLevel <= 9 then
+            Mon="Bandit"; LevelQuest=1; NameQuest="BanditQuest1"
+            CFrameQuest=CFrame.new(1059.37,15.44,1550.42); CFrameMon=CFrame.new(1045.96,27.00,1560.82)
+        elseif MyLevel >=10 and MyLevel <=14 then
+            Mon="Monkey"; LevelQuest=1; NameQuest="JungleQuest"
+            CFrameQuest=CFrame.new(-1598.08,35.55,153.37); CFrameMon=CFrame.new(-1448.51,67.85,11.46)
+        elseif MyLevel >=15 and MyLevel <=29 then
+            Mon="Gorilla"; LevelQuest=2; NameQuest="JungleQuest"
+            CFrameQuest=CFrame.new(-1598.08,35.55,153.37); CFrameMon=CFrame.new(-1129.88,40.46,-525.42)
+        elseif MyLevel >=30 and MyLevel <=39 then
+            Mon="Pirate"; LevelQuest=1; NameQuest="BuggyQuest1"
+            CFrameQuest=CFrame.new(-1141.07,4.10,3831.54); CFrameMon=CFrame.new(-1103.51,13.75,3896.09)
+        elseif MyLevel >=40 and MyLevel <=59 then
+            Mon="Brute"; LevelQuest=2; NameQuest="BuggyQuest1"
+            CFrameQuest=CFrame.new(-1141.07,4.10,3831.54); CFrameMon=CFrame.new(-1140.08,14.80,4322.92)
+        elseif MyLevel >=60 and MyLevel <=74 then
+            Mon="Desert Bandit"; LevelQuest=1; NameQuest="DesertQuest"
+            CFrameQuest=CFrame.new(894.48,5.14,4392.43); CFrameMon=CFrame.new(924.79,6.44,4481.58)
+        elseif MyLevel >=75 and MyLevel <=89 then
+            Mon="Desert Officer"; LevelQuest=2; NameQuest="DesertQuest"
+            CFrameQuest=CFrame.new(894.48,5.14,4392.43); CFrameMon=CFrame.new(1608.28,8.61,4371.00)
+        elseif MyLevel >=90 and MyLevel <=99 then
+            Mon="Snow Bandit"; LevelQuest=1; NameQuest="SnowQuest"
+            CFrameQuest=CFrame.new(1389.74,88.15,-1298.90); CFrameMon=CFrame.new(1354.34,87.27,-1393.94)
+        elseif MyLevel >=100 and MyLevel <=119 then
+            Mon="Snowman"; LevelQuest=2; NameQuest="SnowQuest"
+            CFrameQuest=CFrame.new(1389.74,88.15,-1298.90); CFrameMon=CFrame.new(1201.64,144.57,-1550.06)
+        elseif MyLevel >=120 and MyLevel <=149 then
+            Mon="Chief Petty Officer"; LevelQuest=1; NameQuest="MarineQuest2"
+            CFrameQuest=CFrame.new(-5039.58,27.35,4324.68); CFrameMon=CFrame.new(-4881.23,22.65,4273.75)
+        elseif MyLevel >=150 and MyLevel <=174 then
+            Mon="Sky Bandit"; LevelQuest=1; NameQuest="SkyQuest"
+            CFrameQuest=CFrame.new(-4839.53,716.36,-2619.44); CFrameMon=CFrame.new(-4953.20,295.74,-2899.22)
+        elseif MyLevel >=175 and MyLevel <=189 then
+            Mon="Dark Master"; LevelQuest=2; NameQuest="SkyQuest"
+            CFrameQuest=CFrame.new(-4839.53,716.36,-2619.44); CFrameMon=CFrame.new(-5259.84,391.39,-2229.03)
+        elseif MyLevel >=190 and MyLevel <=209 then
+            Mon="Prisoner"; LevelQuest=1; NameQuest="PrisonerQuest"
+            CFrameQuest=CFrame.new(5308.93,1.65,475.12); CFrameMon=CFrame.new(5098.97,-0.32,474.23)
+        elseif MyLevel >=210 and MyLevel <=249 then
+            Mon="Dangerous Prisoner"; LevelQuest=2; NameQuest="PrisonerQuest"
+            CFrameQuest=CFrame.new(5308.93,1.65,475.12); CFrameMon=CFrame.new(5654.56,15.63,866.29)
+        elseif MyLevel >=250 and MyLevel <=274 then
+            Mon="Toga Warrior"; LevelQuest=1; NameQuest="ColosseumQuest"
+            CFrameQuest=CFrame.new(-1580.04,6.35,-2986.47); CFrameMon=CFrame.new(-1820.21,51.68,-2740.66)
+        elseif MyLevel >=275 and MyLevel <=299 then
+            Mon="Gladiator"; LevelQuest=2; NameQuest="ColosseumQuest"
+            CFrameQuest=CFrame.new(-1580.04,6.35,-2986.47); CFrameMon=CFrame.new(-1292.83,56.38,-3339.03)
+        elseif MyLevel >=300 and MyLevel <=324 then
+            Mon="Military Soldier"; LevelQuest=1; NameQuest="MagmaQuest"
+            CFrameQuest=CFrame.new(-5313.37,10.95,8515.29); CFrameMon=CFrame.new(-5411.16,11.08,8454.29)
+        elseif MyLevel >=325 and MyLevel <=374 then
+            Mon="Military Spy"; LevelQuest=2; NameQuest="MagmaQuest"
+            CFrameQuest=CFrame.new(-5313.37,10.95,8515.29); CFrameMon=CFrame.new(-5802.86,86.26,8828.85)
+        elseif MyLevel >=375 and MyLevel <=399 then
+            Mon="Fishman Warrior"; LevelQuest=1; NameQuest="FishmanQuest"
+            CFrameQuest=CFrame.new(61122.65,18.49,1569.39); CFrameMon=CFrame.new(60878.30,18.48,1543.75)
+        elseif MyLevel >=400 and MyLevel <=449 then
+            Mon="Fishman Commando"; LevelQuest=2; NameQuest="FishmanQuest"
+            CFrameQuest=CFrame.new(61122.65,18.49,1569.39); CFrameMon=CFrame.new(61922.63,18.48,1493.93)
+        elseif MyLevel >=450 and MyLevel <=474 then
+            Mon="God's Guard"; LevelQuest=1; NameQuest="SkyExp1Quest"
+            CFrameQuest=CFrame.new(-4721.88,843.87,-1949.96); CFrameMon=CFrame.new(-4710.04,845.27,-1927.30)
+        elseif MyLevel >=475 and MyLevel <=524 then
+            Mon="Shanda"; LevelQuest=2; NameQuest="SkyExp1Quest"
+            CFrameQuest=CFrame.new(-7859.09,5544.19,-381.47); CFrameMon=CFrame.new(-7678.48,5566.40,-497.21)
+        elseif MyLevel >=525 and MyLevel <=549 then
+            Mon="Royal Squad"; LevelQuest=1; NameQuest="SkyExp2Quest"
+            CFrameQuest=CFrame.new(-7906.81,5634.66,-1411.99); CFrameMon=CFrame.new(-7624.25,5658.13,-1467.35)
+        elseif MyLevel >=550 and MyLevel <=624 then
+            Mon="Royal Soldier"; LevelQuest=2; NameQuest="SkyExp2Quest"
+            CFrameQuest=CFrame.new(-7906.81,5634.66,-1411.99); CFrameMon=CFrame.new(-7836.75,5645.66,-1790.62)
+        elseif MyLevel >=625 and MyLevel <=649 then
+            Mon="Galley Pirate"; LevelQuest=1; NameQuest="FountainQuest"
+            CFrameQuest=CFrame.new(5259.81,37.35,4050.02); CFrameMon=CFrame.new(5551.02,78.90,3930.41)
+        elseif MyLevel >=650 and MyLevel <=699 then
+            Mon="Galley Captain"; LevelQuest=2; NameQuest="FountainQuest"
+            CFrameQuest=CFrame.new(5259.81,37.35,4050.02); CFrameMon=CFrame.new(5232.00,39.00,4079.00)
+        -- World2 (Second Sea)
+        elseif MyLevel >=700 and MyLevel <=724 then
+            Mon="Raider"; LevelQuest=1; NameQuest="Area1Quest"
+            CFrameQuest=CFrame.new(-429.54,71.76,1836.18); CFrameMon=CFrame.new(-728.32,52.77,2345.77)
+        elseif MyLevel >=725 and MyLevel <=774 then
+            Mon="Mercenary"; LevelQuest=2; NameQuest="Area1Quest"
+            CFrameQuest=CFrame.new(-429.54,71.76,1836.18); CFrameMon=CFrame.new(-1004.32,80.15,1424.61)
+        elseif MyLevel >=775 and MyLevel <=824 then
+            Mon="Swan Pirate"; LevelQuest=1; NameQuest="Area2Quest"
+            CFrameQuest=CFrame.new(640,73,918); CFrameMon=CFrame.new(640,73,918)
+        elseif MyLevel >=825 and MyLevel <=874 then
+            Mon="Factory Staff"; LevelQuest=2; NameQuest="Area2Quest"
+            CFrameQuest=CFrame.new(640,73,918); CFrameMon=CFrame.new(640,73,918)
+        elseif MyLevel >=875 and MyLevel <=899 then
+            Mon="Marine Lieutenant"; LevelQuest=1; NameQuest="MarineQuest3"
+            CFrameQuest=CFrame.new(-2668,73,-2914); CFrameMon=CFrame.new(-2668,73,-2914)
+        elseif MyLevel >=900 and MyLevel <=949 then
+            Mon="Marine Captain"; LevelQuest=2; NameQuest="MarineQuest3"
+            CFrameQuest=CFrame.new(-2668,73,-2914); CFrameMon=CFrame.new(-2668,73,-2914)
+        elseif MyLevel >=950 and MyLevel <=999 then
+            Mon="Zombie"; LevelQuest=1; NameQuest="ZombieQuest"
+            CFrameQuest=CFrame.new(-5546,126,-717); CFrameMon=CFrame.new(-5546,126,-717)
+        elseif MyLevel >=1000 and MyLevel <=1049 then
+            Mon="Vampire"; LevelQuest=2; NameQuest="ZombieQuest"
+            CFrameQuest=CFrame.new(-5546,126,-717); CFrameMon=CFrame.new(-5546,126,-717)
+        elseif MyLevel >=1050 and MyLevel <=1149 then
+            Mon="Snow Trooper"; LevelQuest=1; NameQuest="SnowMountainQuest"
+            CFrameQuest=CFrame.new(566,402,-5363); CFrameMon=CFrame.new(566,402,-5363)
+        elseif MyLevel >=1150 and MyLevel <=1249 then
+            Mon="Winter Warrior"; LevelQuest=2; NameQuest="SnowMountainQuest"
+            CFrameQuest=CFrame.new(566,402,-5363); CFrameMon=CFrame.new(566,402,-5363)
+        elseif MyLevel >=1250 and MyLevel <=1349 then
+            Mon="Magma Ninja"; LevelQuest=1; NameQuest="MagmaIslandQuest"
+            CFrameQuest=CFrame.new(-5478,80,-5872); CFrameMon=CFrame.new(-5478,80,-5872)
+        elseif MyLevel >=1350 and MyLevel <=1449 then
+            Mon="Lava Pirate"; LevelQuest=2; NameQuest="MagmaIslandQuest"
+            CFrameQuest=CFrame.new(-5478,80,-5872); CFrameMon=CFrame.new(-5478,80,-5872)
+        elseif MyLevel >=1450 and MyLevel <=1549 then
+            Mon="Sea Soldier"; LevelQuest=1; NameQuest="ForgottenQuest"
+            CFrameQuest=CFrame.new(-3052,239,-10549); CFrameMon=CFrame.new(-3052,239,-10549)
+        elseif MyLevel >=1550 and MyLevel <=1649 then
+            Mon="Water Fighter"; LevelQuest=2; NameQuest="ForgottenQuest"
+            CFrameQuest=CFrame.new(-3052,239,-10549); CFrameMon=CFrame.new(-3052,239,-10549)
+        -- Third Sea (examples)
+        elseif MyLevel >=1650 and MyLevel <=1749 then
+            Mon="Pirate"; LevelQuest=1; NameQuest="PortQuest"
+            CFrameQuest=CFrame.new(-406,73,5587); CFrameMon=CFrame.new(-406,73,5587)
+        elseif MyLevel >=1750 and MyLevel <=1849 then
+            Mon="Dragon Crew Warrior"; LevelQuest=1; NameQuest="HydraQuest1"
+            CFrameQuest=CFrame.new(5229,603,345); CFrameMon=CFrame.new(5229,603,345)
+        elseif MyLevel >=1850 and MyLevel <=1949 then
+            Mon="Stone"; LevelQuest=2; NameQuest="HydraQuest2"
+            CFrameQuest=CFrame.new(2263,28,-6485); CFrameMon=CFrame.new(2263,28,-6485)
+        elseif MyLevel >=1950 and MyLevel <=2049 then
+            Mon="Giant Tree"; LevelQuest=1; NameQuest="GreatTreeQuest"
+            CFrameQuest=CFrame.new(2263,28,-6485); CFrameMon=CFrame.new(2263,28,-6485)
+        elseif MyLevel >=2050 and MyLevel <=2149 then
+            Mon="Marine Commodore"; LevelQuest=1; NameQuest="TurtleQuest1"
+            CFrameQuest=CFrame.new(-11486,332,-8346); CFrameMon=CFrame.new(-11486,332,-8346)
+        elseif MyLevel >=2150 and MyLevel <=2249 then
+            Mon="Fishman Raider"; LevelQuest=2; NameQuest="TurtleQuest2"
+            CFrameQuest=CFrame.new(-12119,332,-8786); CFrameMon=CFrame.new(-12119,332,-8786)
+        elseif MyLevel >=2250 and MyLevel <=2349 then
+            Mon="Reborn Skeleton"; LevelQuest=1; NameQuest="HauntedQuest1"
+            CFrameQuest=CFrame.new(-9512,141,5965); CFrameMon=CFrame.new(-9512,141,5965)
+        elseif MyLevel >=2350 and MyLevel <=2449 then
+            Mon="Living Zombie"; LevelQuest=2; NameQuest="HauntedQuest2"
+            CFrameQuest=CFrame.new(-9512,141,5965); CFrameMon=CFrame.new(-9512,141,5965)
+        elseif MyLevel >=2450 and MyLevel <=2499 then
+            Mon="Cookie Crafter"; LevelQuest=1; NameQuest="CakeQuest1"
+            CFrameQuest=CFrame.new(-2074,71,-12270); CFrameMon=CFrame.new(-2074,71,-12270)
+        elseif MyLevel >=2500 and MyLevel <=2549 then
+            Mon="Head Baker"; LevelQuest=2; NameQuest="CakeQuest2"
+            CFrameQuest=CFrame.new(-2074,71,-12270); CFrameMon=CFrame.new(-2074,71,-12270)
+        elseif MyLevel >=2550 and MyLevel <=2599 then
+            Mon="Tiki Outlaw"; LevelQuest=1; NameQuest="TikiQuest1"
+            CFrameQuest=CFrame.new(-16202,100,1037); CFrameMon=CFrame.new(-16202,100,1037)
+        elseif MyLevel >=2600 and MyLevel <=2699 then
+            Mon="Skull Slayer"; LevelQuest=2; NameQuest="TikiQuest3"
+            CFrameQuest=CFrame.new(-16202,100,1037); CFrameMon=CFrame.new(-16202,100,1037)
+        elseif MyLevel >=2700 and MyLevel <=2750 then
+            Mon="Ancient Gorilla"; LevelQuest=1; NameQuest="TikiQuest3"
+            CFrameQuest=CFrame.new(-16202,100,1037); CFrameMon=CFrame.new(-16202,100,1037)
+        else
+            Mon=nil; LevelQuest=nil; NameQuest=nil; CFrameQuest=nil; CFrameMon=nil
+        end
+
+    -- World2 minimal fallback mapping (if place is World2)
+    elseif World2 then
+        if MyLevel >=700 and MyLevel <=774 then
+            Mon="Raider"; LevelQuest=1; NameQuest="Area1Quest"
+            CFrameQuest=CFrame.new(-429.54,71.76,1836.18); CFrameMon=CFrame.new(-728.32,52.77,2345.77)
+        elseif MyLevel >=775 and MyLevel <=874 then
+            Mon="Swan Pirate"; LevelQuest=1; NameQuest="Area2Quest"
+            CFrameQuest=CFrame.new(640,73,918); CFrameMon=CFrame.new(640,73,918)
+        elseif MyLevel >=875 and MyLevel <=949 then
+            Mon="Factory Staff"; LevelQuest=2; NameQuest="Area2Quest"
+            CFrameQuest=CFrame.new(640,73,918); CFrameMon=CFrame.new(640,73,918)
+        else
+            Mon=nil
+        end
+
+    -- World3 minimal fallback mapping
+    elseif World3 then
+        if MyLevel >=1500 and MyLevel <=1799 then
+            Mon="Pirate"; LevelQuest=1; NameQuest="PortQuest"
+            CFrameQuest=CFrame.new(-406,73,5587); CFrameMon=CFrame.new(-406,73,5587)
+        elseif MyLevel >=1800 and MyLevel <=2099 then
+            Mon="Dragon Crew Warrior"; LevelQuest=1; NameQuest="HydraQuest"
+            CFrameQuest=CFrame.new(5229,603,345); CFrameMon=CFrame.new(5229,603,345)
+        elseif MyLevel >=2100 and MyLevel <=2449 then
+            Mon="Reborn Skeleton"; LevelQuest=1; NameQuest="HauntedQuest"
+            CFrameQuest=CFrame.new(-9512,141,5965); CFrameMon=CFrame.new(-9512,141,5965)
+        elseif MyLevel >=2450 and MyLevel <=2750 then
+            Mon="Tiki Outlaw"; LevelQuest=1; NameQuest="TikiQuest"
+            CFrameQuest=CFrame.new(-16202,100,1037); CFrameMon=CFrame.new(-16202,100,1037)
+        else
+            Mon=nil
+        end
+    end
+end
+
+-- Main farm loop
+spawn(function()
+    while task.wait(0.12) do
+        if AutoFarm then
+            pcall(function()
+                CheckQuest()
+                local hasQuest = false
+                local guiMain = LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.PlayerGui:FindFirstChild("Main")
+                if guiMain and guiMain:FindFirstChild("Quest") and guiMain.Quest.Visible then hasQuest = true end
+
+                if NameQuest and LevelQuest and CFrameQuest then
+                    if not hasQuest then
+                        TweenPlayer(CFrameQuest + Vector3.new(0,3,0), 0.6)
+                        task.wait(0.4)
+                        pcall(function() RS.Remotes.CommF_:InvokeServer("StartQuest", NameQuest, LevelQuest) end)
+                        task.wait(0.6)
+                    else
+                        if Mon and workspace:FindFirstChild("Enemies") then
+                            local found=false
+                            for _,v in ipairs(workspace.Enemies:GetChildren()) do
+                                if v.Name==Mon and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health>0 then
+                                    found=true
+                                    EquipMelee()
+                                    TweenPlayer(v.HumanoidRootPart.CFrame * CFrame.new(0,0,2.5), 0.12)
+                                    repeat
+                                        if not AutoFarm then break end
+                                        Attack()
+                                        task.wait(0.08)
+                                    until not v.Parent or v.Humanoid.Health<=0 or not AutoFarm
+                                    task.wait(0.12)
+                                end
+                            end
+                            if not found and CFrameMon then
+                                TweenPlayer(CFrameMon + Vector3.new(0,3,0), 0.6)
+                                task.wait(0.6)
+                            end
+                        end
+                    end
+                else
+                    -- fallback: attack nearest enemy within 100 studs
+                    local nearest=nil; local nd=9999
+                    for _,v in ipairs(workspace:GetDescendants()) do
+                        if v.Name=="HumanoidRootPart" and v.Parent and v.Parent:FindFirstChild("Humanoid") then
+                            local hum=v.Parent.Humanoid
+                            if hum and hum.Health>0 then
+                                local mag = (v.Position - HRP().Position).Magnitude
+                                if mag < nd and mag < 120 then nd=mag; nearest=v.Parent end
+                            end
+                        end
+                    end
+                    if nearest then
+                        EquipMelee()
+                        TweenPlayer(nearest.HumanoidRootPart.CFrame * CFrame.new(0,0,2.5), 0.2)
+                        repeat
+                            Attack()
+                            task.wait(0.08)
+                        until not nearest.Parent or nearest:FindFirstChild("Humanoid")==nil or nearest.Humanoid.Health<=0 or not AutoFarm
+                    end
+                end
+            end)
+        end
+    end
+end)
